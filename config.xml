@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<configuration>
+  <receive-delay-ms>50</receive-delay-ms>
+  <multicast-group>224.100.5.1</multicast-group>
+  <multicast-port>29874</multicast-port>
+</configuration>
