@@ -9,31 +9,32 @@ namespace Quotes_Receiver
     {
         private const int ROUND_DIGITS = 4;
 
-        private readonly ValuesReceiver _valuesReceiver;
+        private readonly PacketsProcessor _packetsProcessing;
 
-        public ValuesCharacteristics ValuesCharacteristics { get; }
-
-        public CharacteristicsCalculator(ValuesReceiver valuesReceiver)
+        public CharacteristicsCalculator(PacketsProcessor packetsProcessing)
         {
             ValuesCharacteristics = new ValuesCharacteristics();
-            _valuesReceiver = valuesReceiver;
+            _packetsProcessing = packetsProcessing;
         }
+
+        public ValuesCharacteristics ValuesCharacteristics { get; }
 
         public void CalculateCharacteristics()
         {
             while (true)
             {
-                var inputDictionary = new Dictionary<double, int>(_valuesReceiver.ReceivedValues);
-                if (!inputDictionary.Any())
+                var constantInputDictionary = new Dictionary<double, int>(_packetsProcessing.ReceivedValues);
+
+                if (!constantInputDictionary.Any())
                 {
                     continue;
                 }
 
-                ValuesCharacteristics.Average = Math.Round(GetAverage(inputDictionary), ROUND_DIGITS);
+                ValuesCharacteristics.Average = Math.Round(GetAverage(constantInputDictionary), ROUND_DIGITS);
                 ValuesCharacteristics.StandardDeviation =
-                    Math.Round(GetStandardDeviation(inputDictionary, ValuesCharacteristics.Average), ROUND_DIGITS);
-                ValuesCharacteristics.Median = Math.Round(GetMedian(inputDictionary), ROUND_DIGITS);
-                ValuesCharacteristics.Mode = Math.Round(GetMode(inputDictionary), ROUND_DIGITS);
+                    Math.Round(GetStandardDeviation(constantInputDictionary, ValuesCharacteristics.Average), ROUND_DIGITS);
+                ValuesCharacteristics.Median = Math.Round(GetMedian(constantInputDictionary), ROUND_DIGITS);
+                ValuesCharacteristics.Mode = Math.Round(GetMode(constantInputDictionary), ROUND_DIGITS);
             }
         }
 
@@ -52,7 +53,7 @@ namespace Quotes_Receiver
 
         private static double GetMedian(Dictionary<double, int> inputDictionary)
         {
-            var orderedValues = inputDictionary.OrderBy(p => p.Key).ToList();
+            var orderedValues = inputDictionary.OrderBy(p => p.Value).ToList();
             var midValue = (orderedValues.Count - 1) / 2.0;
             return (orderedValues[(int) midValue].Key + orderedValues[(int) (midValue + 0.5)].Key) / 2;
         }

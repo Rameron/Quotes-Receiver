@@ -18,7 +18,11 @@ namespace Quotes_Receiver
                 Task.Factory.StartNew(valuesReceiver.StartReceiving, TaskCreationOptions.LongRunning);
                 Console.WriteLine("Values receiver successfully started!");
 
-                var characteristicsCalculator = new CharacteristicsCalculator(valuesReceiver);
+                var packetsProcessor = new PacketsProcessor(valuesReceiver);
+                Task.Factory.StartNew(packetsProcessor.StartProcessing, TaskCreationOptions.LongRunning);
+                Console.WriteLine("Packets processor successfully started!");
+
+                var characteristicsCalculator = new CharacteristicsCalculator(packetsProcessor);
                 Task.Factory.StartNew(characteristicsCalculator.CalculateCharacteristics, TaskCreationOptions.LongRunning);
                 Console.WriteLine("Characteristics calculator successfully started!");
 
@@ -32,8 +36,8 @@ namespace Quotes_Receiver
                     while (Console.ReadKey().Key != ConsoleKey.Enter) { }
 
                     Console.WriteLine(characteristicsCalculator.ValuesCharacteristics);
-                    Console.WriteLine($"Lost Packets: {valuesReceiver.LostPackets}");
-                    Console.WriteLine($"Received Packets: {valuesReceiver.ReceivedValues.Sum(p => p.Value)}");
+                    Console.WriteLine($"Lost Packets: {packetsProcessor.LostPackets}");
+                    Console.WriteLine($"Received Packets: {packetsProcessor.ReceivedValues.Sum(x => x.Value)}");
                     Console.WriteLine();
                 }
             }

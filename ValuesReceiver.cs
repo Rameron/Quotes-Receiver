@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -15,21 +13,17 @@ namespace Quotes_Receiver
 
         private readonly ReceiveConfig _receiveConfig;
 
-        private long _firstPacketCounter = -1L;
         private int _lastDelaySecond = -1;
-        private long _lastPacketCounter = -1L;
 
         private UdpClient _udpClient;
 
         public ValuesReceiver(ReceiveConfig receiveConfig)
         {
             _receiveConfig = receiveConfig;
-            ReceivedValues = new ConcurrentDictionary<double, int>();
+            ReceivedPackets = new ConcurrentQueue<byte[]>();
         }
 
-        public ConcurrentDictionary<double, int> ReceivedValues { get; }
-
-        public long LostPackets { get; private set; }
+        public ConcurrentQueue<byte[]> ReceivedPackets { get; }
 
 
         ~ValuesReceiver()
@@ -44,14 +38,7 @@ namespace Quotes_Receiver
             var ipEndPoint = new IPEndPoint(IPAddress.Any, 0);
             while (true)
             {
-                var receivedData = ReceiveValue(ref ipEndPoint);
-                if (receivedData.Length != 16)
-                {
-                    continue;
-                }
-
-                CalculateLostPackets(receivedData);
-                AddReceivedValue(receivedData);
+                ReceivedPackets.Enqueue(ReceiveValue(ref ipEndPoint));
                 ExecuteDelay();
             }
         }
@@ -79,35 +66,11 @@ namespace Quotes_Receiver
             }
             catch (SocketException e)
             {
-                Console.WriteLine($"Failed to receive data through UDP client: {e.Message}.\nOperation will repeat in {RECONNECT_DELAY_MS / 1000} seconds...");
+                Console.WriteLine(
+                    $"Failed to receive data through UDP client: {e.Message}.\nOperation will repeat in {RECONNECT_DELAY_MS / 1000} seconds...");
                 Thread.Sleep(RECONNECT_DELAY_MS);
                 return ReceiveValue(ref ipEndPoint);
             }
-        }
-
-        private void CalculateLostPackets(IEnumerable<byte> inputBytes)
-        {
-            var currentPacketCounter = BitConverter.ToInt64(inputBytes.Take(8).ToArray());
-            if (_firstPacketCounter == -1L)
-            {
-                _firstPacketCounter = currentPacketCounter;
-            }
-            else if (_lastPacketCounter == -1L)
-            {
-                LostPackets += currentPacketCounter - _firstPacketCounter - 1;
-            }
-            else
-            {
-                LostPackets += currentPacketCounter - _lastPacketCounter - 1;
-            }
-
-            _lastPacketCounter = currentPacketCounter;
-        }
-
-        private void AddReceivedValue(IEnumerable<byte> inputBytes)
-        {
-            var receivedValue = BitConverter.ToDouble(inputBytes.Skip(8).Take(8).ToArray());
-            ReceivedValues.AddOrUpdate(receivedValue, 1, (k, v) => v + 1);
         }
 
         private void ExecuteDelay()
