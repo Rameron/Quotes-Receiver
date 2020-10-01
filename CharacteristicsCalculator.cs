@@ -53,7 +53,7 @@ namespace Quotes_Receiver
 
         private static double GetMedian(Dictionary<double, int> inputDictionary)
         {
-            var orderedValues = inputDictionary.OrderBy(p => p.Value).ToList();
+            var orderedValues = inputDictionary.OrderBy(p => p.Key).ToList();
             var midValue = (orderedValues.Count - 1) / 2.0;
             return (orderedValues[(int) midValue].Key + orderedValues[(int) (midValue + 0.5)].Key) / 2;
         }
